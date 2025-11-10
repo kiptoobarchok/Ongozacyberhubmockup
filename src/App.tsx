@@ -6,6 +6,7 @@ import { LoginPage } from './components/auth/LoginPage';
 import { StudentRegistration } from './components/auth/StudentRegistration';
 import { EmployerRegistration } from './components/auth/EmployerRegistration';
 import { MentorRegistration } from './components/auth/MentorRegistration';
+import { AdminRegistration } from './components/auth/AdminRegistration';
 import { DashboardOverview } from './components/DashboardOverview';
 import { AdmissionsOnboarding } from './components/AdmissionsOnboarding';
 import { ProfilingTest } from './components/ProfilingTest';
@@ -15,6 +16,8 @@ import { MentorshipCoaching } from './components/MentorshipCoaching';
 import { CareerPlacement } from './components/CareerPlacement';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { Sidebar } from './components/Sidebar';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { JobListings } from './components/employer/JobListings';
 import { 
   LayoutDashboard, 
   UserPlus, 
@@ -27,9 +30,9 @@ import {
 } from 'lucide-react';
 
 export type UserRole = 'student' | 'mentor' | 'admin' | 'employer';
-export type NavItem = 'dashboard' | 'admissions' | 'profiling' | 'learning' | 'projects' | 'mentorship' | 'placement' | 'analytics';
+export type NavItem = 'dashboard' | 'admissions' | 'profiling' | 'learning' | 'projects' | 'mentorship' | 'placement' | 'analytics' | 'jobs';
 
-type AuthView = 'welcome' | 'login' | 'student-signup' | 'employer-signup' | 'mentor-signup';
+type AuthView = 'welcome' | 'login' | 'student-signup' | 'employer-signup' | 'mentor-signup' | 'admin-signup';
 
 function MainApp() {
   const { user, isAuthenticated } = useAuth();
@@ -47,6 +50,8 @@ function MainApp() {
         return <EmployerRegistration onBack={() => setAuthView('welcome')} />;
       case 'mentor-signup':
         return <MentorRegistration onBack={() => setAuthView('welcome')} />;
+      case 'admin-signup':
+        return <AdminRegistration onBack={() => setAuthView('welcome')} />;
       default:
         return (
           <WelcomePage
@@ -59,6 +64,8 @@ function MainApp() {
                 setAuthView('employer-signup');
               } else if (role === 'mentor') {
                 setAuthView('mentor-signup');
+              } else if (role === 'admin') {
+                setAuthView('admin-signup');
               }
             }}
           />
@@ -73,12 +80,7 @@ function MainApp() {
     ];
 
     if (user.role === 'admin') {
-      return [
-        ...baseItems,
-        { id: 'admissions' as NavItem, label: 'Admissions', icon: UserPlus },
-        { id: 'analytics' as NavItem, label: 'Analytics', icon: BarChart3 },
-        { id: 'mentorship' as NavItem, label: 'Mentorship', icon: Users },
-      ];
+      return baseItems; // Admin uses tabs in AdminDashboard component
     }
 
     if (user.role === 'student') {
@@ -103,7 +105,8 @@ function MainApp() {
     if (user.role === 'employer') {
       return [
         ...baseItems,
-        { id: 'placement' as NavItem, label: 'Candidates', icon: Briefcase },
+        { id: 'jobs' as NavItem, label: 'Job Listings', icon: Briefcase },
+        { id: 'placement' as NavItem, label: 'Candidates', icon: Users },
         { id: 'projects' as NavItem, label: 'Portfolios', icon: FolderKanban },
       ];
     }
@@ -113,7 +116,12 @@ function MainApp() {
 
   // Role-based content rendering with access control
   const renderContent = () => {
-    // Dashboard is accessible to all roles
+    // Admin always shows AdminDashboard
+    if (user.role === 'admin') {
+      return <AdminDashboard />;
+    }
+
+    // Dashboard is accessible to all other roles
     if (activeNav === 'dashboard') {
       return <DashboardOverview role={user.role} />;
     }
@@ -151,24 +159,12 @@ function MainApp() {
     // Employer-only routes
     if (user.role === 'employer') {
       switch (activeNav) {
+        case 'jobs':
+          return <JobListings />;
         case 'placement':
           return <CareerPlacement role={user.role} />;
         case 'projects':
           return <ProjectsPortfolio role={user.role} />;
-        default:
-          return <DashboardOverview role={user.role} />;
-      }
-    }
-
-    // Admin-only routes
-    if (user.role === 'admin') {
-      switch (activeNav) {
-        case 'admissions':
-          return <AdmissionsOnboarding />;
-        case 'analytics':
-          return <AnalyticsDashboard />;
-        case 'mentorship':
-          return <MentorshipCoaching role={user.role} />;
         default:
           return <DashboardOverview role={user.role} />;
       }

@@ -3,364 +3,440 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
-import { 
-  Brain, 
-  CheckCircle2, 
-  Circle, 
+import { AIInsightCard } from './shared/AIInsightCard';
+import { TrackBadge } from './shared/TrackBadge';
+import { LEARNING_TRACKS, TrackId } from '../lib/constants';
+import {
+  Brain,
+  Code,
+  Users,
   Target,
-  TrendingUp,
-  AlertTriangle,
-  ArrowRight
+  Lightbulb,
+  CheckCircle,
+  ArrowRight,
+  BarChart3,
 } from 'lucide-react';
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
-
-interface Question {
-  id: number;
-  question: string;
-  options: string[];
-  category: string;
-}
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
+import { toast } from 'sonner@2.0.3';
 
 export function ProfilingTest() {
+  const [testStarted, setTestStarted] = useState(false);
+  const [testCompleted, setTestCompleted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [isComplete, setIsComplete] = useState(false);
 
-  const questions: Question[] = [
+  const questions = [
     {
       id: 1,
-      question: 'How comfortable are you with Linux command-line operations?',
-      options: ['Not familiar', 'Basic commands', 'Intermediate', 'Advanced'],
-      category: 'Technical Skills',
+      type: 'personality',
+      question: 'When faced with a security incident, what is your first instinct?',
+      options: [
+        { value: 'A', text: 'Dive into logs and technical analysis immediately', track: 'builders' },
+        { value: 'B', text: 'Coordinate team response and delegate tasks', track: 'leaders' },
+        { value: 'C', text: 'Think about innovative detection methods', track: 'entrepreneurs' },
+        { value: 'D', text: 'Document the incident for training purposes', track: 'educators' },
+        { value: 'E', text: 'Research similar incidents and emerging patterns', track: 'researchers' },
+      ],
     },
     {
       id: 2,
-      question: 'Have you worked with networking concepts (TCP/IP, DNS, etc.)?',
-      options: ['No experience', 'Basic understanding', 'Moderate experience', 'Extensive experience'],
-      category: 'Networking',
+      type: 'skill',
+      question: 'Which activity sounds most appealing to you?',
+      options: [
+        { value: 'A', text: 'Building and configuring security tools', track: 'builders' },
+        { value: 'B', text: 'Developing security policies and frameworks', track: 'leaders' },
+        { value: 'C', text: 'Creating innovative security solutions', track: 'entrepreneurs' },
+        { value: 'D', text: 'Teaching others about cybersecurity', track: 'educators' },
+        { value: 'E', text: 'Analyzing threat intelligence data', track: 'researchers' },
+      ],
     },
     {
       id: 3,
-      question: 'Rate your programming/scripting knowledge',
-      options: ['None', 'Basic (Python/Bash)', 'Multiple languages', 'Expert level'],
-      category: 'Programming',
+      type: 'technical',
+      question: 'Complete this Python security check:\nif user_input.contains("<?php"):\n    _____',
+      options: [
+        { value: 'A', text: 'block_request()', track: 'builders' },
+        { value: 'B', text: 'alert_admin()', track: 'leaders' },
+        { value: 'C', text: 'log_and_analyze()', track: 'researchers' },
+        { value: 'D', text: 'sanitize_input()', track: 'builders' },
+      ],
     },
     {
       id: 4,
-      question: 'Do you have experience with security tools (Wireshark, Nmap, etc.)?',
-      options: ['Never used', 'Heard of them', 'Used a few', 'Regular user'],
-      category: 'Security Tools',
+      type: 'scenario',
+      question: 'Your company needs to implement a new security program. What role do you prefer?',
+      options: [
+        { value: 'A', text: 'Implement technical controls and monitoring', track: 'builders' },
+        { value: 'B', text: 'Lead the project and manage stakeholders', track: 'leaders' },
+        { value: 'C', text: 'Design an innovative approach to the problem', track: 'entrepreneurs' },
+        { value: 'D', text: 'Train staff on the new security measures', track: 'educators' },
+        { value: 'E', text: 'Research best practices and emerging threats', track: 'researchers' },
+      ],
     },
     {
       id: 5,
-      question: 'How would you rate your problem-solving ability?',
-      options: ['Developing', 'Good', 'Very good', 'Excellent'],
-      category: 'Soft Skills',
+      type: 'preference',
+      question: 'What type of cybersecurity content do you consume most?',
+      options: [
+        { value: 'A', text: 'Technical tutorials and lab exercises', track: 'builders' },
+        { value: 'B', text: 'Industry reports and compliance frameworks', track: 'leaders' },
+        { value: 'C', text: 'Startup stories and innovation trends', track: 'entrepreneurs' },
+        { value: 'D', text: 'Educational resources and teaching methods', track: 'educators' },
+        { value: 'E', text: 'Academic papers and threat research', track: 'researchers' },
+      ],
     },
   ];
 
-  const handleAnswer = (answer: string) => {
-    setAnswers({ ...answers, [currentQuestion]: answer });
+  // Simulated test results
+  const skillGaps = [
+    { skill: 'Network Security', current: 65, target: 85, gap: 20 },
+    { skill: 'Cloud Security', current: 45, target: 80, gap: 35 },
+    { skill: 'Incident Response', current: 70, target: 90, gap: 20 },
+    { skill: 'Python Scripting', current: 55, target: 75, gap: 20 },
+    { skill: 'SIEM Tools', current: 50, target: 85, gap: 35 },
+  ];
+
+  const skillRadarData = [
+    { skill: 'Technical', value: 75 },
+    { skill: 'Problem Solving', value: 85 },
+    { skill: 'Communication', value: 70 },
+    { skill: 'Leadership', value: 60 },
+    { skill: 'Innovation', value: 80 },
+    { skill: 'Analysis', value: 78 },
+  ];
+
+  const trackScores: Record<string, number> = {
+    builders: 85,
+    leaders: 62,
+    entrepreneurs: 70,
+    educators: 58,
+    researchers: 75,
+  };
+
+  const handleAnswer = (value: string) => {
+    setAnswers({ ...answers, [currentQuestion]: value });
     
     if (currentQuestion < questions.length - 1) {
-      setTimeout(() => setCurrentQuestion(currentQuestion + 1), 300);
+      setTimeout(() => {
+        setCurrentQuestion(currentQuestion + 1);
+        toast.success('Answer recorded!');
+      }, 300);
     } else {
-      setTimeout(() => setIsComplete(true), 300);
+      setTimeout(() => {
+        setTestCompleted(true);
+        toast.success('Profiling test completed! Analyzing results...');
+      }, 300);
     }
   };
 
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  const startTest = () => {
+    setTestStarted(true);
+    toast.info('Profiling test started. Answer honestly for best results!');
+  };
 
-  const skillGapData = [
-    { skill: 'Linux/CLI', current: 65, required: 80 },
-    { skill: 'Networking', current: 70, required: 85 },
-    { skill: 'Programming', current: 55, required: 75 },
-    { skill: 'Security Tools', current: 50, required: 80 },
-    { skill: 'Problem Solving', current: 75, required: 85 },
-  ];
+  const restartTest = () => {
+    setTestStarted(false);
+    setTestCompleted(false);
+    setCurrentQuestion(0);
+    setAnswers({});
+  };
 
-  const radarData = [
-    { subject: 'Technical', A: 75, B: 90, fullMark: 100 },
-    { subject: 'Networking', A: 68, B: 85, fullMark: 100 },
-    { subject: 'Programming', A: 60, B: 80, fullMark: 100 },
-    { subject: 'Security', A: 55, B: 85, fullMark: 100 },
-    { subject: 'Soft Skills', A: 80, B: 85, fullMark: 100 },
-  ];
-
-  const recommendedTracks = [
-    {
-      title: 'SOC Analyst Track',
-      match: 85,
-      description: 'Best fit based on your networking and problem-solving skills',
-      strengths: ['Strong analytical thinking', 'Good networking foundation'],
-      gaps: ['Security tools exposure', 'SIEM platforms'],
-    },
-    {
-      title: 'Network Security',
-      match: 72,
-      description: 'Good match for your networking background',
-      strengths: ['Networking knowledge', 'Technical aptitude'],
-      gaps: ['Advanced firewall config', 'VPN technologies'],
-    },
-    {
-      title: 'Penetration Testing',
-      match: 58,
-      description: 'Requires additional programming skills',
-      strengths: ['Problem-solving ability'],
-      gaps: ['Programming proficiency', 'Security tool expertise'],
-    },
-  ];
-
-  if (isComplete) {
+  // Start Screen
+  if (!testStarted) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl text-white mb-2">Profiling Results</h1>
-          <p className="text-slate-400">Your skill assessment and recommended learning path</p>
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-3xl text-white mb-2">Profiling & Track Suitability Assessment</h1>
+          <p className="text-slate-400">Discover your optimal learning path in cybersecurity</p>
         </div>
 
-        {/* Overall Score */}
-        <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm mb-8">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl text-white mb-2">Overall Readiness Score</h3>
-                <p className="text-slate-400">Based on your responses</p>
+        <Card className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-purple-500/30">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500">
+                <Brain className="w-8 h-8 text-white" />
               </div>
-              <div className="text-center">
-                <div className="text-5xl text-cyan-400 mb-2">72%</div>
-                <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500">Good Foundation</Badge>
+              <div>
+                <CardTitle className="text-white">AI-Powered Track Assessment</CardTitle>
+                <CardDescription className="text-slate-400">
+                  Personalized learning path recommendation
+                </CardDescription>
               </div>
             </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4 mb-6">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5" />
+                <div>
+                  <p className="text-white">Comprehensive Assessment</p>
+                  <p className="text-sm text-slate-400">5 questions covering personality, skills, and technical aptitude</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5" />
+                <div>
+                  <p className="text-white">AI Analysis</p>
+                  <p className="text-sm text-slate-400">Advanced algorithms analyze your responses to predict optimal track fit</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5" />
+                <div>
+                  <p className="text-white">Skill Gap Visualization</p>
+                  <p className="text-sm text-slate-400">Detailed breakdown of your strengths and areas for development</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5" />
+                <div>
+                  <p className="text-white">Personalized Recommendations</p>
+                  <p className="text-sm text-slate-400">Tailored module suggestions based on your results</p>
+                </div>
+              </div>
+            </div>
+
+            <Button 
+              onClick={startTest}
+              className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+            >
+              Start Assessment
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </CardContent>
         </Card>
 
-        {/* Skill Radar */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-white">Skill Profile</CardTitle>
-              <CardDescription className="text-slate-400">Current vs Required levels</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="#334155" />
-                  <PolarAngleAxis dataKey="subject" stroke="#94a3b8" />
-                  <PolarRadiusAxis stroke="#94a3b8" />
-                  <Radar name="Your Level" dataKey="A" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.3} />
-                  <Radar name="Required" dataKey="B" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.2} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-white">Skill Gap Analysis</CardTitle>
-              <CardDescription className="text-slate-400">Areas for improvement</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {skillGapData.map((skill) => {
-                  const gap = skill.required - skill.current;
-                  return (
-                    <div key={skill.skill}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-slate-300">{skill.skill}</span>
-                        <span className="text-xs text-slate-400">
-                          Gap: {gap}%
-                        </span>
-                      </div>
-                      <div className="relative h-3 bg-slate-700 rounded-full overflow-hidden">
-                        <div
-                          className="absolute left-0 h-full bg-cyan-500"
-                          style={{ width: `${skill.current}%` }}
-                        />
-                        <div
-                          className="absolute left-0 h-full border-2 border-purple-500 border-dashed"
-                          style={{ width: `${skill.required}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recommended Tracks */}
-        <div className="mb-8">
-          <h2 className="text-2xl text-white mb-4">Recommended Tracks</h2>
-          <div className="space-y-4">
-            {recommendedTracks.map((track, index) => (
-              <Card
-                key={track.title}
-                className={`border-2 transition-all ${
-                  index === 0
-                    ? 'bg-cyan-500/10 border-cyan-500'
-                    : 'bg-slate-800/30 border-slate-700'
-                }`}
+        {/* Learning Tracks Overview */}
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white">Available Learning Tracks</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {Object.values(LEARNING_TRACKS).map((track) => (
+              <div
+                key={track.id}
+                className={`p-4 rounded-lg border ${track.borderColor} ${track.bgColor}`}
               >
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl text-white">{track.title}</h3>
-                        {index === 0 && (
-                          <Badge className="bg-green-500/20 text-green-300 border-green-500">
-                            Best Match
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-400">{track.description}</p>
-                    </div>
-                    <div className="text-center ml-4">
-                      <div className="text-3xl text-cyan-400 mb-1">{track.match}%</div>
-                      <span className="text-xs text-slate-500">Match</span>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{track.icon}</span>
+                  <div>
+                    <h3 className={track.textColor}>{track.name}</h3>
+                    <p className="text-sm text-slate-400">{track.description}</p>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-sm text-green-400 mb-2 flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4" />
-                        Your Strengths
-                      </h4>
-                      <ul className="space-y-1">
-                        {track.strengths.map((strength) => (
-                          <li key={strength} className="text-sm text-slate-300 pl-4">
-                            • {strength}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="text-sm text-orange-400 mb-2 flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4" />
-                        Areas to Develop
-                      </h4>
-                      <ul className="space-y-1">
-                        {track.gaps.map((gap) => (
-                          <li key={gap} className="text-sm text-slate-300 pl-4">
-                            • {gap}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  {index === 0 && (
-                    <div className="mt-4 pt-4 border-t border-slate-700">
-                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white">
-                        Start SOC Analyst Track
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  // Test in Progress
+  if (!testCompleted) {
+    const currentQ = questions[currentQuestion];
+    const progress = ((currentQuestion + 1) / questions.length) * 100;
+
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-3xl text-white mb-2">Track Suitability Assessment</h1>
+          <p className="text-slate-400">Question {currentQuestion + 1} of {questions.length}</p>
+        </div>
+
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="p-6">
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-slate-400">Progress</span>
+                <span className="text-sm text-cyan-400">{Math.round(progress)}%</span>
+              </div>
+              <Progress value={progress} className="h-2" />
+            </div>
+
+            <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30">
+              {currentQ.type.charAt(0).toUpperCase() + currentQ.type.slice(1)} Question
+            </Badge>
+
+            <h2 className="text-xl text-white mb-6 whitespace-pre-wrap">{currentQ.question}</h2>
+
+            <div className="space-y-3">
+              {currentQ.options.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handleAnswer(option.value)}
+                  className="w-full p-4 rounded-lg border-2 border-slate-700 bg-slate-900/50 hover:border-cyan-500 hover:bg-slate-800/50 transition-all text-left group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full border-2 border-slate-600 group-hover:border-cyan-500 flex items-center justify-center transition-colors">
+                      <span className="text-slate-400 group-hover:text-cyan-400">{option.value}</span>
+                    </div>
+                    <span className="text-slate-300 group-hover:text-white">{option.text}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Results Screen
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl text-white mb-2">Skills Profiling Assessment</h1>
-        <p className="text-slate-400">Help us understand your background to recommend the best track</p>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl text-white mb-2">Your Profiling Results</h1>
+        <p className="text-slate-400">AI-powered track recommendation and skill analysis</p>
       </div>
 
-      {/* Progress */}
-      <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm mb-8">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-slate-400">
-              Question {currentQuestion + 1} of {questions.length}
-            </span>
-            <span className="text-sm text-slate-400">{Math.round(progress)}%</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </CardContent>
-      </Card>
+      {/* Primary Track Recommendation */}
+      <AIInsightCard
+        title="Primary Track Recommendation"
+        type="prediction"
+        confidence={trackScores.builders}
+        insight={`Based on your responses, you show exceptional alignment with the Builders Track. Your technical aptitude, hands-on problem-solving approach, and preference for practical implementation indicate you'll thrive in SOC operations, security engineering, and technical security roles.`}
+      />
 
-      {/* Question Card */}
-      <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Track Fit Scores */}
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Track Fit Analysis
+            </CardTitle>
+            <CardDescription className="text-slate-400">Your compatibility with each learning track</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Object.entries(trackScores).map(([trackId, score]) => {
+              const track = LEARNING_TRACKS[trackId as TrackId];
+              return (
+                <div key={trackId}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span>{track.icon}</span>
+                      <span className="text-slate-300">{track.name}</span>
+                    </div>
+                    <span className={track.textColor}>{score}%</span>
+                  </div>
+                  <Progress value={score} className="h-2" />
+                  {score === Math.max(...Object.values(trackScores)) && (
+                    <Badge className="mt-2 bg-green-500/20 text-green-400 border-green-500/30">
+                      Recommended
+                    </Badge>
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        {/* Skill Radar Chart */}
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Competency Profile
+            </CardTitle>
+            <CardDescription className="text-slate-400">Your strengths across key areas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <RadarChart data={skillRadarData}>
+                <PolarGrid stroke="#334155" />
+                <PolarAngleAxis dataKey="skill" stroke="#94a3b8" />
+                <PolarRadiusAxis stroke="#94a3b8" />
+                <Radar name="Skills" dataKey="value" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.4} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Skill Gap Visualizer */}
+      <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 rounded-lg bg-cyan-500/10">
-              <Brain className="w-6 h-6 text-cyan-400" />
-            </div>
-            <Badge variant="outline" className="border-slate-600 text-slate-400">
-              {questions[currentQuestion].category}
-            </Badge>
-          </div>
-          <CardTitle className="text-xl text-white">
-            {questions[currentQuestion].question}
+          <CardTitle className="text-white flex items-center gap-2">
+            <Lightbulb className="w-5 h-5" />
+            Skill Gap Analysis
           </CardTitle>
+          <CardDescription className="text-slate-400">
+            Areas for development to reach your target proficiency
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {questions[currentQuestion].options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => handleAnswer(option)}
-                className="w-full p-4 rounded-lg border-2 border-slate-700 bg-slate-800/30 hover:border-cyan-500 hover:bg-cyan-500/10 transition-all text-left group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full border-2 border-slate-600 group-hover:border-cyan-500 flex items-center justify-center">
-                    {answers[currentQuestion] === option ? (
-                      <CheckCircle2 className="w-5 h-5 text-cyan-400" />
-                    ) : (
-                      <Circle className="w-3 h-3 text-slate-600 group-hover:text-cyan-500" />
-                    )}
-                  </div>
-                  <span className="text-white">{option}</span>
-                </div>
-              </button>
-            ))}
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={skillGaps} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <XAxis type="number" stroke="#94a3b8" />
+              <YAxis dataKey="skill" type="category" stroke="#94a3b8" width={150} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
+              />
+              <Bar dataKey="current" fill="#06b6d4" name="Current Level" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="target" fill="#8b5cf6" name="Target Level" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Secondary Recommendations */}
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Personalized Learning Recommendations</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-700">
+            <div className="flex items-start gap-3">
+              <Code className="w-5 h-5 text-cyan-400 mt-0.5" />
+              <div>
+                <h3 className="text-white mb-1">Start with Network Security Fundamentals</h3>
+                <p className="text-sm text-slate-400">
+                  Build a strong foundation in TCP/IP, firewalls, and network protocols. This aligns with your Builders Track recommendation.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-700">
+            <div className="flex items-start gap-3">
+              <Users className="w-5 h-5 text-purple-400 mt-0.5" />
+              <div>
+                <h3 className="text-white mb-1">Consider Leadership Track as Secondary</h3>
+                <p className="text-sm text-slate-400">
+                  Your communication scores suggest you could benefit from governance and management modules later in your journey.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg bg-slate-900/50 border border-slate-700">
+            <div className="flex items-start gap-3">
+              <Target className="w-5 h-5 text-green-400 mt-0.5" />
+              <div>
+                <h3 className="text-white mb-1">Focus on Cloud Security Certification</h3>
+                <p className="text-sm text-slate-400">
+                  Your skill gap analysis shows cloud security as a high-impact area. AWS Security Fundamentals is recommended.
+                </p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Question Navigation */}
-      <div className="flex justify-between items-center">
+      {/* Action Buttons */}
+      <div className="flex items-center justify-between">
         <Button
-          onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
-          disabled={currentQuestion === 0}
+          onClick={restartTest}
           variant="outline"
           className="border-slate-700 text-slate-300 hover:bg-slate-800"
         >
-          Previous
+          Retake Assessment
         </Button>
-        <div className="flex gap-2">
-          {questions.map((_, index) => (
-            <div
-              key={index}
-              className={`w-2 h-2 rounded-full transition-all ${
-                index === currentQuestion
-                  ? 'bg-cyan-400 w-6'
-                  : index < currentQuestion
-                  ? 'bg-green-500'
-                  : 'bg-slate-700'
-              }`}
-            />
-          ))}
-        </div>
-        <Button
-          onClick={() => {
-            if (currentQuestion < questions.length - 1) {
-              setCurrentQuestion(currentQuestion + 1);
-            }
-          }}
-          disabled={!answers[currentQuestion]}
-          className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white"
-        >
-          {currentQuestion === questions.length - 1 ? 'Complete' : 'Next'}
+        <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white">
+          Start Learning Journey
+          <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
     </div>

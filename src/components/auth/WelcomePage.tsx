@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
-import { Shield, GraduationCap, Users, Building } from 'lucide-react';
+import { Shield, GraduationCap, Users, Building, ShieldCheck } from 'lucide-react';
 
 interface WelcomePageProps {
-  onRoleSelect: (role: 'student' | 'mentor' | 'employer' | 'login') => void;
+  onRoleSelect: (role: 'student' | 'mentor' | 'employer' | 'admin' | 'login') => void;
 }
 
 export function WelcomePage({ onRoleSelect }: WelcomePageProps) {
@@ -23,7 +23,7 @@ export function WelcomePage({ onRoleSelect }: WelcomePageProps) {
         </div>
 
         {/* Role Selection Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Student */}
           <Card 
             className="bg-slate-800/50 border-slate-700 backdrop-blur-sm hover:border-cyan-500 transition-all cursor-pointer group"
@@ -137,6 +137,45 @@ export function WelcomePage({ onRoleSelect }: WelcomePageProps) {
               </ul>
               <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white">
                 Register Company
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Admin */}
+          <Card 
+            className="bg-slate-800/50 border-slate-700 backdrop-blur-sm hover:border-red-500 transition-all cursor-pointer group"
+            onClick={() => onRoleSelect('admin')}
+          >
+            <CardHeader>
+              <div className="p-4 rounded-lg bg-red-500/10 w-fit mb-4 group-hover:bg-red-500/20 transition-colors">
+                <ShieldCheck className="w-8 h-8 text-red-400" />
+              </div>
+              <CardTitle className="text-white">Administrator</CardTitle>
+              <CardDescription className="text-slate-400">
+                Manage the OCH platform and operations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm text-slate-300 mb-6">
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  Manage learning tracks
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  Oversee mentors & students
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  Handle mentor payments
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  Platform analytics
+                </li>
+              </ul>
+              <Button className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white">
+                Admin Registration
               </Button>
             </CardContent>
           </Card>
