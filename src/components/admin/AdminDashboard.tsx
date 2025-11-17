@@ -4,11 +4,15 @@ import { DashboardOverview } from '../DashboardOverview';
 import { TrackManagement } from './TrackManagement';
 import { MentorManagement } from './MentorManagement';
 import { CohortManagement } from './CohortManagement';
+import { EmployerManagement } from './EmployerManagement';
+import { PartnerManagement } from './PartnerManagement';
 import {
   LayoutDashboard,
   Route,
   Users,
   GraduationCap,
+  Briefcase,
+  Handshake,
   Settings,
 } from 'lucide-react';
 
@@ -23,7 +27,7 @@ export function AdminDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-slate-800/50">
+        <TabsList className="grid w-full grid-cols-7 bg-slate-800/50">
           <TabsTrigger value="overview" className="data-[state=active]:bg-slate-700">
             <LayoutDashboard className="w-4 h-4 mr-2" />
             Overview
@@ -39,6 +43,14 @@ export function AdminDashboard() {
           <TabsTrigger value="cohorts" className="data-[state=active]:bg-slate-700">
             <GraduationCap className="w-4 h-4 mr-2" />
             Cohorts
+          </TabsTrigger>
+          <TabsTrigger value="employers" className="data-[state=active]:bg-slate-700">
+            <Briefcase className="w-4 h-4 mr-2" />
+            Employers
+          </TabsTrigger>
+          <TabsTrigger value="partners" className="data-[state=active]:bg-slate-700">
+            <Handshake className="w-4 h-4 mr-2" />
+            Partners
           </TabsTrigger>
           <TabsTrigger value="settings" className="data-[state=active]:bg-slate-700">
             <Settings className="w-4 h-4 mr-2" />
@@ -60,6 +72,14 @@ export function AdminDashboard() {
 
         <TabsContent value="cohorts" className="mt-6">
           <CohortManagement />
+        </TabsContent>
+
+        <TabsContent value="employers" className="mt-6">
+          <EmployerManagement />
+        </TabsContent>
+
+        <TabsContent value="partners" className="mt-6">
+          <PartnerManagement />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-6">

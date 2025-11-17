@@ -9,7 +9,6 @@ import { MentorRegistration } from './components/auth/MentorRegistration';
 import { AdminRegistration } from './components/auth/AdminRegistration';
 import { DashboardOverview } from './components/DashboardOverview';
 import { AdmissionsOnboarding } from './components/AdmissionsOnboarding';
-import { ProfilingTest } from './components/ProfilingTest';
 import { LearningDelivery } from './components/LearningDelivery';
 import { ProjectsPortfolio } from './components/ProjectsPortfolio';
 import { MentorshipCoaching } from './components/MentorshipCoaching';
@@ -18,10 +17,10 @@ import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { Sidebar } from './components/Sidebar';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { JobListings } from './components/employer/JobListings';
+import { OnboardingModal } from './components/OnboardingModal';
 import { 
   LayoutDashboard, 
   UserPlus, 
-  Brain, 
   BookOpen, 
   FolderKanban, 
   Users, 
@@ -30,12 +29,12 @@ import {
 } from 'lucide-react';
 
 export type UserRole = 'student' | 'mentor' | 'admin' | 'employer';
-export type NavItem = 'dashboard' | 'admissions' | 'profiling' | 'learning' | 'projects' | 'mentorship' | 'placement' | 'analytics' | 'jobs';
+export type NavItem = 'dashboard' | 'admissions' | 'learning' | 'projects' | 'mentorship' | 'placement' | 'analytics' | 'jobs';
 
 type AuthView = 'welcome' | 'login' | 'student-signup' | 'employer-signup' | 'mentor-signup' | 'admin-signup';
 
 function MainApp() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, completeOnboarding } = useAuth();
   const [authView, setAuthView] = useState<AuthView>('welcome');
   const [activeNav, setActiveNav] = useState<NavItem>('dashboard');
 
@@ -84,14 +83,20 @@ function MainApp() {
     }
 
     if (user.role === 'student') {
-      return [
-        ...baseItems,
-        { id: 'admissions' as NavItem, label: 'Onboarding', icon: UserPlus },
-        { id: 'profiling' as NavItem, label: 'Profiling', icon: Brain },
+      const studentItems = [...baseItems];
+      
+      // Only show Onboarding nav item if onboarding is not completed
+      if (!user.onboardingCompleted) {
+        studentItems.push({ id: 'admissions' as NavItem, label: 'Onboarding', icon: UserPlus });
+      }
+      
+      studentItems.push(
         { id: 'learning' as NavItem, label: 'Learning', icon: BookOpen },
         { id: 'projects' as NavItem, label: 'Portfolio', icon: FolderKanban },
-        { id: 'placement' as NavItem, label: 'Careers', icon: Briefcase },
-      ];
+        { id: 'placement' as NavItem, label: 'Careers', icon: Briefcase }
+      );
+      
+      return studentItems;
     }
 
     if (user.role === 'mentor') {
@@ -131,8 +136,6 @@ function MainApp() {
       switch (activeNav) {
         case 'admissions':
           return <AdmissionsOnboarding />;
-        case 'profiling':
-          return <ProfilingTest />;
         case 'learning':
           return <LearningDelivery />;
         case 'projects':
@@ -173,8 +176,18 @@ function MainApp() {
     return <DashboardOverview role={user.role} />;
   };
 
+  // Check if student needs to complete onboarding
+  const needsOnboarding = user.role === 'student' && !user.onboardingCompleted;
+
+  const handleOnboardingComplete = () => {
+    completeOnboarding();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Show onboarding modal for new students */}
+      {needsOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} />}
+      
       <Sidebar
         currentRole={user.role}
         onRoleChange={() => {}} // Role switching disabled in auth mode

@@ -9,6 +9,7 @@ export interface User {
   role: UserRole;
   fullName: string;
   profilePicture?: string;
+  onboardingCompleted?: boolean;
   // Student fields
   phoneNumber?: string;
   gender?: string;
@@ -35,6 +36,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   signup: (userData: Partial<User>, password: string) => Promise<boolean>;
+  completeOnboarding: () => void;
   isAuthenticated: boolean;
 }
 
@@ -157,8 +159,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast.success('Logged out successfully. See you soon!');
   };
 
+  const completeOnboarding = () => {
+    if (user) {
+      const updatedUser = { ...user, onboardingCompleted: true };
+      setUser(updatedUser);
+      localStorage.setItem('ochUser', JSON.stringify(updatedUser));
+
+      // Update in users list
+      const users = JSON.parse(localStorage.getItem('ochUsers') || '[]');
+      const userIndex = users.findIndex((u: User) => u.id === user.id);
+      if (userIndex !== -1) {
+        users[userIndex] = updatedUser;
+        localStorage.setItem('ochUsers', JSON.stringify(users));
+      }
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, signup, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, logout, signup, completeOnboarding, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
